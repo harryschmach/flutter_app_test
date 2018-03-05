@@ -3,13 +3,16 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:async';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart' show debugPaintSizeEnabled;
 
 // Uncomment lines 7 and 10 to view the visual layout at runtime.
 //import 'package:flutter/rendering.dart' show debugPaintSizeEnabled;
 
 void main() {
-  debugPaintSizeEnabled = true;
+  debugPaintSizeEnabled = false;
   runApp(new MyApp());
 }
 
@@ -98,6 +101,7 @@ Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese Alps. Situate
 
     return new MaterialApp(
       title: 'Flutter Demo',
+      theme: new ThemeData(primarySwatch: Colors.green),
       home: new Scaffold(
         appBar: new AppBar(
           title: new Text('Top Lakes'),
@@ -126,7 +130,62 @@ class FavoriteWidget extends StatefulWidget {
 }
 class _FavoriteWidgetState extends State<FavoriteWidget> {
   bool _isFavorited = true;
-  int _favoriteCount = 41;
+  int _favoriteCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _readCounter().then((int value) {
+      setState(() {
+        _favoriteCount = value;
+      });
+    });
+  }
+
+  Future<File> _getLocalFile() async {
+    // get the path to the document directory.
+    String dir = (await getApplicationDocumentsDirectory()).path;
+    return new File('$dir/counter.txt');
+  }
+
+  Future<int> _readCounter() async {
+    try {
+      File file = await _getLocalFile();
+      // read the variable as a string from the file.
+      String contents = await file.readAsString();
+      return int.parse(contents);
+    } on FileSystemException {
+      return 0;
+    }
+  }
+
+  Future<Null> _incrementFavorite() async {
+    setState(() {
+      _favoriteCount++;
+    });
+    // write the variable as a string to the file
+    await (await _getLocalFile()).writeAsString('$_favoriteCount');
+  }
+
+  Future<Null> _decrementFavorite() async {
+    setState(() {
+      _favoriteCount--;
+    });
+    // write the variable as a string to the file
+    await (await _getLocalFile()).writeAsString('$_favoriteCount');
+  }
+
+//  void _incrementFavorite(){
+//    setState((){
+//      _favoriteCount += 1;
+//    });
+//  }
+//
+//  void _decrementFavorite(){
+//    setState((){
+//      _favoriteCount -= 1;
+//    });
+//  }
 
   void _toggleFavorite() {
     setState(() {
@@ -147,21 +206,37 @@ class _FavoriteWidgetState extends State<FavoriteWidget> {
     return new Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+//        new Container(
+//          padding: new EdgeInsets.all(0.0),
+//          child: new IconButton(
+//            icon: (_isFavorited
+//                ? new Icon(Icons.star)
+//                : new Icon(Icons.star_border)),
+//            color: Colors.red[500],
+//            onPressed: _toggleFavorite,
+//          ),
+//        ),
         new Container(
-          padding: new EdgeInsets.all(0.0),
+          padding: new EdgeInsets.all(4.0),
           child: new IconButton(
-            icon: (_isFavorited
-                ? new Icon(Icons.star)
-                : new Icon(Icons.star_border)),
-            color: Colors.red[500],
-            onPressed: _toggleFavorite,
+              icon: new Icon(Icons.arrow_downward),
+              onPressed: _decrementFavorite,
           ),
+
         ),
         new SizedBox(
           width: 18.0,
           child: new Container(
             child: new Text('$_favoriteCount'),
           ),
+        ),
+        new Container(
+          padding: new EdgeInsets.all(4.0),
+          child: new IconButton(
+            icon: new Icon(Icons.arrow_upward),
+            onPressed: _incrementFavorite,
+          ),
+
         ),
       ],
     );
